@@ -1,4 +1,4 @@
-//! Consolidated chaos screensaver effect module.
+﻿//! Consolidated chaos screensaver effect module.
 //!
 //! **Taxonomy Classification**: System Role (Purpose - Application Software).
 
@@ -7,7 +7,7 @@ use std::time::Duration;
 use library::core::screensaver::Screensaver;
 use library::core::logo_block::render_logo_block;
 
-use library::platform::native::sys_info::get_system_info;
+use library::toolkit::sys_info::get_system_info;
 
 
 
