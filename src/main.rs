@@ -3,10 +3,9 @@
     windows_subsystem = "windows"
 )]
 
-mod runner;
 mod chaos;
 
 fn main() {
     let effect = chaos::Chaos::new();
-    runner::run_main(effect, "chaos");
+    library::screensaver_runner::run_main(effect, "chaos");
 }
