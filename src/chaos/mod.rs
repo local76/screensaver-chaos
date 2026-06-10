@@ -9,9 +9,7 @@ use library::core::logo_block::render_logo_block;
 
 use library::platform::native::sys_info::get_system_info;
 
-use library::toolkit::rgb_controller::{RgbController, is_openrgb_enabled};
 
-use library::toolkit::rgb_protocol::RgbColor;
 use library::toolkit::sys_info::query_current_palette;
 
 mod types;
@@ -37,8 +35,6 @@ pub struct Chaos {
     pub(crate) mem_pressure: f32,
     pub(crate) cpu_load: f32,
     pub(crate) host_bias: f32,
-    pub(crate) rgb: Option<RgbController>,
-    pub(crate) rgb_timer: f32,
     pub(crate) last_phase: Option<Phase>,
     pub(crate) time_elapsed: f32,
 }
@@ -73,8 +69,6 @@ impl Chaos {
             mem_pressure: sys.mem_used_pct / 100.0,
             cpu_load: 0.4,
             host_bias,
-            rgb: if is_openrgb_enabled() { Some(RgbController::new()) } else { None },
-            rgb_timer: 0.0,
             last_phase: None,
             time_elapsed: 0.0,
         }
@@ -283,53 +277,7 @@ impl Screensaver for Chaos {
         self.time_elapsed += delta;
 
         // OpenRGB unstable phase-based updates
-        self.rgb_timer += delta;
-        if self.rgb_timer >= 0.08 {
-            self.rgb_timer = 0.0;
-            if let Some(ref r) = self.rgb {
-                let accent = query_current_palette().accent;
-                
-                if Some(self.phase) != self.last_phase {
-                    self.last_phase = Some(self.phase);
-                    if self.phase == Phase::Exploding {
-                        let (flash_c, dur_ms) = match self.explosion_type {
-                            ExplosionType::Supernova => (RgbColor::new(255, 255, 220), 500),
-                            ExplosionType::BlackHole => (RgbColor::new(120, 0, 255), 600),
-                            ExplosionType::Vortex => (RgbColor::new(0, 180, 255), 450),
-                            ExplosionType::GlitchWave => (RgbColor::new(255, 0, 0), 300),
-                            ExplosionType::Shockwave => (RgbColor::new(0, 255, 180), 400),
-                            ExplosionType::Entropy => (RgbColor::new(255, 128, 0), 500),
-                            ExplosionType::Resonance => (RgbColor::new(255, 0, 128), 450),
-                        };
-                        r.flash(flash_c, Duration::from_millis(dur_ms));
-                    }
-                }
-                
-                // Set baseline color in non-exploding phases
-                if self.phase != Phase::Exploding {
-                    match self.phase {
-                        Phase::Assembled => {
-                            r.set_color(RgbColor::new(accent.0 / 2, accent.1 / 2, accent.2 / 2));
-                        }
-                        Phase::Chaos => {
-                            let r_val = self.rng.next_range(100.0, 220.0) as u8;
-                            let g_val = self.rng.next_range(20.0, 100.0) as u8;
-                            r.set_color(RgbColor::new(r_val, g_val, 0));
-                        }
-                        Phase::SnapBack => {
-                            let progress = (self.phase_timer / 1.5).clamp(0.0, 1.0);
-                            let red = (accent.0 as f32 * progress + 150.0 * (1.0 - progress)) as u8;
-                            let green = (accent.1 as f32 * progress + 50.0 * (1.0 - progress)) as u8;
-                            let blue = (accent.2 as f32 * progress) as u8;
-                            r.set_color(RgbColor::new(red / 2, green / 2, blue / 2));
-                        }
-                        Phase::Exploding => {}
-                    }
-                }
-            }
-        }
-
-        // Live: high system load = more chaos/explosions, host_bias unique instability
+// Live: high system load = more chaos/explosions, host_bias unique instability
         self.sys_refresh_timer += delta;
         if self.sys_refresh_timer >= 1.0 {
             let sys = get_system_info();
