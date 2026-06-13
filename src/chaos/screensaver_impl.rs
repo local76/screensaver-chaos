@@ -8,13 +8,6 @@ impl Screensaver for Chaos {
     fn update(&mut self, dt: Duration, cols: usize, rows: usize) {
         let dt_secs = dt.as_secs_f32();
 
-        // Auto-detect high refresh rates during the startup phase
-        if self.time_elapsed < 2.0 && dt_secs > 0.001 {
-            if dt_secs < self.target_frame_time - 0.001 {
-                self.target_frame_time = dt_secs;
-            }
-        }
-
         // Exponential moving average for frame time (alpha = 0.1)
         self.frame_time_ema = self.frame_time_ema * 0.9 + dt_secs.min(0.2) * 0.1;
 
@@ -23,9 +16,14 @@ impl Screensaver for Chaos {
         self.phase_timer += delta;
         self.time_elapsed += delta;
 
+        // Auto-detect the baseline frame time during the startup phase
+        if self.time_elapsed < 1.5 {
+            self.target_frame_time = self.frame_time_ema;
+        }
+
         // Adjust quality_scale based on frame time performance vs target
         if self.time_elapsed > 1.5 {
-            if self.frame_time_ema > self.target_frame_time * 1.15 {
+            if self.frame_time_ema > self.target_frame_time * 1.25 {
                 self.quality_scale = (self.quality_scale - 0.15 * delta).max(0.20);
             } else if self.frame_time_ema < self.target_frame_time * 1.05 {
                 self.quality_scale = (self.quality_scale + 0.04 * delta).min(1.0);
